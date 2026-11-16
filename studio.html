@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3. Area Studio – Come funziona il Web</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .study-section { margin-bottom: 2.5rem; }
+
+    /* Flashcard 3D */
+    .flashcard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .flashcard {
+      height: 170px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.5s;
+      transform-style: preserve-3d;
+    }
+    .flashcard.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+    .flashcard-front, .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 10px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .flashcard-front {
+      background: #eff6ff;
+      color: var(--primary-dark);
+      font-weight: bold;
+      font-size: 1.05rem;
+    }
+    .flashcard-front small {
+      font-weight: normal;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+    .flashcard-back {
+      background: var(--primary);
+      color: #fff;
+      transform: rotateY(180deg);
+      font-size: 0.9rem;
+    }
+
+    /* Quiz */
+    .quiz-item {
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+    .quiz-item:last-of-type { border-bottom: none; }
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      margin-top: 0.5rem;
+    }
+    .quiz-options label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      background: #f8fafc;
+    }
+    .quiz-options label:hover { background: #f1f5f9; }
+    .feedback {
+      margin-top: 0.5rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .feedback.correct {
+      display: block;
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    .feedback.wrong {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    .score-banner {
+      margin-top: 1.25rem;
+      padding: 1rem;
+      border-radius: 8px;
+      background: #dbeafe;
+      color: #1e3a8a;
+      font-weight: bold;
+      display: none;
+    }
+
+    /* Glossario */
+    .search-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      margin: 1rem 0;
+    }
+    .glossary-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.75rem;
+    }
+    .glossary-item {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem;
+    }
+    .glossary-item strong { color: var(--primary-dark); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="logo">NetExplained</a>
+      <button class="menu-btn" id="menuBtn" aria-label="Apri menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="teoria.html">1. Teoria</a></li>
+        <li><a href="laboratorio.html">2. Laboratorio</a></li>
+        <li><a href="studio.html" class="active">3. Studio</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>3. Area Studio e Verifica</h1>
+      <p>Ripassa con le flashcard, metti alla prova le tue conoscenze con il quiz e consulta il glossario.</p>
+    </section>
+
+    <!-- 1. FLASHCARD -->
+    <article class="card study-section">
+      <h2>3.1 Flashcard di ripasso</h2>
+      <p>Clicca su una carta per girarla e scoprire la definizione.</p>
+      <div class="flashcard-grid" id="flashcardGrid"></div>
+    </article>
+
+    <!-- 2. QUIZ -->
+    <article class="card study-section">
+      <h2>3.2 Quiz di autovalutazione</h2>
+      <p>Rispondi alle 8 domande e premi <strong>"Verifica risposte"</strong> per vedere il tuo punteggio e le spiegazioni.</p>
+      <div id="quizContainer"></div>
+      <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <button class="btn" id="checkQuizBtn" style="margin-top:0;">Verifica risposte</button>
+        <button class="btn" id="resetQuizBtn" style="margin-top:0; background:#475569;">Ricomincia quiz</button>
+      </div>
+      <div class="score-banner" id="scoreBanner"></div>
+    </article>
+
+    <!-- 3. GLOSSARIO -->
+    <article class="card study-section">
+      <h2>3.3 Glossario rapido</h2>
+      <p>Cerca un termine tecnico per visualizzare subito il suo significato:</p>
+      <input type="text" id="glossarySearch" class="search-input" placeholder="Scrivi un termine (es. DNS, TLS, Server, IP, IMAP)...">
+      <div class="glossary-list" id="glossaryList"></div>
+    </article>
+
+    <div>
+      <a href="laboratorio.html" class="btn" style="background:#475569;">← Torna al Laboratorio</a>
+    </div>
+  </main>
+
+  <footer>
+    <p>Progetto didattico realizzato da <strong>DHANOA MACRINO MAFFEO</strong> – Pubblicato su GitHub Pages.</p>
+
+  </footer>
+
+  <script>
+    // Menu mobile
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
+
+    // --- 1. DATI E LOGICA FLASHCARD ---
+    const flashcardsData = [
+      { front: "Modello Client-Server", back: "Architettura in cui un Client (es. browser) richiede servizi o risorse a un Server sempre attivo in rete." },
+      { front: "A cosa serve il DNS?", back: "Traduce i nomi di dominio leggibili dall'uomo (es. www.esempio.it) in indirizzi IP numerici." },
+      { front: "Cosa significa HTTP?", back: "HyperText Transfer Protocol: il protocollo del livello applicativo usato per trasferire pagine web." },
+      { front: "Differenza tra GET e POST", back: "GET chiede e legge una risorsa dal server; POST invia dati al server (es. moduli di registrazione)." },
+      { front: "Errore 404 Not Found", back: "Codice di stato HTTP che indica che la pagina richiesta non esiste sul server." },
+      { front: "Ruolo di TLS in HTTPS", back: "Transport Layer Security: cifra i dati scambiati tra browser e server e verifica l'identità del sito." },
+      { front: "A cosa serve SMTP?", back: "Simple Mail Transfer Protocol: protocollo usato per inviare e inoltrare le email tra client e server." },
+      { front: "Differenza tra IMAP e SMTP", back: "SMTP serve per inviare la posta; IMAP serve per leggere e sincronizzare le email su più dispositivi." }
+    ];
+
+    const flashcardGrid = document.getElementById('flashcardGrid');
+    flashcardsData.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'flashcard';
+      card.innerHTML = `
+        <div class="flashcard-inner">
+          <div class="flashcard-front">
+            <span>${item.front}</span>
+            <small>Clicca per girare</small>
+          </div>
+          <div class="flashcard-back">
+            <span>${item.back}</span>
+          </div>
+        </div>
+      `;
+      card.addEventListener('click', () => card.classList.toggle('flipped'));
+      flashcardGrid.appendChild(card);
+    });
+
+    // --- 2. DATI E LOGICA QUIZ ---
+    const quizData = [
+      {
+        q: "1. In quale livello dello stack TCP/IP operano HTTP, DNS e SMTP?",
+        options: ["Livello Internet", "Livello Trasporto", "Livello Applicazione", "Livello Accesso alla Rete"],
+        answer: 2,
+        explanation: "HTTP, DNS, HTTPS, SMTP e IMAP operano tutti nel Livello Applicazione, quello più vicino ai programmi dell'utente."
+      },
+      {
+        q: "2. Qual è il primo passaggio che avviene quando digiti un nome di dominio nuovo nel browser?",
+        options: ["Il server invia subito il file HTML", "Viene effettuata una risoluzione DNS per trovare l'indirizzo IP", "Si attiva il protocollo SMTP", "Il browser cancella la cronologia"],
+        answer: 1,
+        explanation: "Senza l'indirizzo IP restituito dal DNS, il browser non sa a quale computer in rete inviare la richiesta."
+      },
+      {
+        q: "3. Che cosa indica il codice di stato HTTP 200 OK?",
+        options: ["Pagina non trovata", "Errore interno del server", "Richiesta andata a buon fine", "Accesso negato"],
+        answer: 2,
+        explanation: "200 OK è la risposta standard che conferma che il server ha elaborato correttamente la richiesta."
+      },
+      {
+        q: "4. Quale protocollo garantisce che i dati su un sito HTTPS siano cifrati?",
+        options: ["TLS (Transport Layer Security)", "FTP (File Transfer Protocol)", "POP3", "HTML5"],
+        answer: 0,
+        explanation: "HTTPS utilizza TLS per cifrare la comunicazione ed evitare che terzi possano intercettare password o dati."
+      },
+      {
+        q: "5. Quale metodo HTTP si usa solitamente per inviare i dati di un modulo di contatto?",
+        options: ["GET", "POST", "DNS", "PING"],
+        answer: 1,
+        explanation: "POST invia dati nel corpo della richiesta HTTP per farli elaborare o salvare dal server."
+      },
+      {
+        q: "6. Cosa significa ricevere un errore 403 Forbidden?",
+        options: ["Il server è spento", "La pagina non esiste", "Non hai i permessi per accedere alla risorsa", "La connessione Wi-Fi è assente"],
+        answer: 2,
+        explanation: "403 Forbidden indica che il server ha compreso la richiesta ma rifiuta di autorizzarla."
+      },
+      {
+        q: "7. Quale protocollo viene utilizzato per spedire un'email verso il server di posta?",
+        options: ["HTTP", "IMAP", "SMTP", "DNS"],
+        answer: 2,
+        explanation: "SMTP (Simple Mail Transfer Protocol) gestisce l'invio e l'inoltro dei messaggi di posta elettronica."
+      },
+      {
+        q: "8. Nell'URL 'https://www.scuola.it/orari.html', qual è il percorso della risorsa?",
+        options: ["https://", "www.scuola.it", "/orari.html", "scuola.it"],
+        answer: 2,
+        explanation: "'/orari.html' è il path (percorso) che indica al server quale file specifico restituire."
+      }
+    ];
+
+    const quizContainer = document.getElementById('quizContainer');
+    quizData.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'quiz-item';
+      const optsHtml = item.options.map((opt, oIdx) => `
+        <label>
+          <input type="radio" name="q${idx}" value="${oIdx}">
+          <span>${opt}</span>
+        </label>
+      `).join('');
+      div.innerHTML = `
+        <strong>${item.q}</strong>
+        <div class="quiz-options">${optsHtml}</div>
+        <div class="feedback" id="fb${idx}"></div>
+      `;
+      quizContainer.appendChild(div);
+    });
+
+    document.getElementById('checkQuizBtn').addEventListener('click', () => {
+      let score = 0;
+      quizData.forEach((item, idx) => {
+        const selected = document.querySelector(`input[name="q${idx}"]:checked`);
+        const fb = document.getElementById(`fb${idx}`);
+        if (selected && parseInt(selected.value) === item.answer) {
+          score++;
+          fb.className = 'feedback correct';
+          fb.textContent = '✓ Corretto! ' + item.explanation;
+        } else {
+          fb.className = 'feedback wrong';
+          fb.textContent = '✗ Errato. ' + item.explanation;
+        }
+      });
+      const banner = document.getElementById('scoreBanner');
+      banner.style.display = 'block';
+      banner.textContent = `Risultato finale: hai risposto correttamente a ${score} domande su ${quizData.length}!`;
+    });
+
+    document.getElementById('resetQuizBtn').addEventListener('click', () => {
+      document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+      document.querySelectorAll('.feedback').forEach(fb => {
+        fb.className = 'feedback';
+        fb.textContent = '';
+      });
+      document.getElementById('scoreBanner').style.display = 'none';
+    });
+
+    // --- 3. DATI E LOGICA GLOSSARIO ---
+    const glossaryData = [
+      { term: "Browser", def: "Applicazione client (es. Chrome, Firefox, Safari) che richiede e visualizza le pagine web." },
+      { term: "Client", def: "Dispositivo o programma che avvia una richiesta verso un server." },
+      { term: "DNS (Domain Name System)", def: "Sistema gerarchico che traduce i nomi di dominio in indirizzi IP." },
+      { term: "HTTP", def: "Protocollo applicativo per il trasferimento di ipertesti e risorse sul Web." },
+      { term: "HTTPS", def: "Versione sicura di HTTP che utilizza la crittografia TLS." },
+      { term: "IMAP", def: "Protocollo per accedere e sincronizzare le email direttamente sul server di posta." },
+      { term: "Indirizzo IP", def: "Codice numerico che identifica univocamente un dispositivo collegato a una rete." },
+      { term: "Server", def: "Computer o software che ospita risorse e risponde alle richieste dei client." },
+      { term: "SMTP", def: "Protocollo standard per l'invio e l'inoltro di messaggi di posta elettronica." },
+      { term: "Status Code", def: "Codice numerico a 3 cifre inviato dal server per indicare l'esito di una richiesta HTTP." },
+      { term: "TCP/IP", def: "Insieme dei protocolli fondamentali su cui si basa il funzionamento di Internet." },
+      { term: "TLS (Transport Layer Security)", def: "Protocollo crittografico che garantisce riservatezza e integrità dei dati su Internet." },
+      { term: "URL", def: "Uniform Resource Locator: l'indirizzo completo che identifica una risorsa sul Web." }
+    ];
+
+    const glossaryList = document.getElementById('glossaryList');
+    const glossarySearch = document.getElementById('glossarySearch');
+
+    function renderGlossary(filter = '') {
+      const query = filter.toLowerCase().trim();
+      const filtered = glossaryData.filter(g =>
+        g.term.toLowerCase().includes(query) || g.def.toLowerCase().includes(query)
+      );
+      if (filtered.length === 0) {
+        glossaryList.innerHTML = '<p style="color:var(--muted);">Nessun termine trovato.</p>';
+        return;
+      }
+      glossaryList.innerHTML = filtered.map(g => `
+        <div class="glossary-item">
+          <strong>${g.term}</strong>
+          <p style="font-size:0.9rem; margin-top:0.3rem;">${g.def}</p>
+        </div>
+      `).join('');
+    }
+
+    renderGlossary();
+    glossarySearch.addEventListener('input', (e) => renderGlossary(e.target.value));
+  </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2. Laboratorio Interattivo – Come funziona il Web</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .sim-box { margin-bottom: 2.5rem; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin: 1rem 0;
+    }
+    select {
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .btn-secondary {
+      background: #475569;
+    }
+    .btn-secondary:hover { background: #334155; }
+    .btn:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    /* Schema visuale Simulatore 1 */
+    .network-diagram {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    .node {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 0.5rem;
+      background: #f8fafc;
+      transition: all 0.3s ease;
+    }
+    .node.active {
+      border-color: var(--primary);
+      background: #dbeafe;
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+    .node.error {
+      border-color: var(--err);
+      background: #fee2e2;
+    }
+    .node-icon { font-size: 2rem; display: block; margin-bottom: 0.4rem; }
+    .step-log {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 1.25rem;
+      border-radius: 8px;
+      min-height: 110px;
+    }
+    .step-badge {
+      display: inline-block;
+      background: var(--primary);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Layout Simulatore 2 */
+    .http-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      background: #f8fafc;
+    }
+    .raw-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: monospace;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-top: 0.75rem;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+    .status-ok { background: var(--ok); }
+    .status-warn { background: var(--warn); }
+    .status-err { background: var(--err); }
+
+    @media (max-width: 768px) {
+      .network-diagram { grid-template-columns: 1fr; }
+      .http-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="logo">NetExplained</a>
+      <button class="menu-btn" id="menuBtn" aria-label="Apri menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="teoria.html">1. Teoria</a></li>
+        <li><a href="laboratorio.html" class="active">2. Laboratorio</a></li>
+        <li><a href="studio.html">3. Studio</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>2. Laboratorio Interattivo</h1>
+      <p>Sperimenta in prima persona cosa succede dietro le quinte durante una connessione web.</p>
+    </section>
+
+    <!-- SIMULATORE 1 -->
+    <article class="card sim-box">
+      <h2>Simulatore 1: Dal click alla pagina (DNS + HTTP/HTTPS)</h2>
+      <p>Scegli un indirizzo web da visitare e premi <strong>"Passo successivo"</strong> per seguire il viaggio dei messaggi tra il tuo Browser, il Server DNS e il Web Server.</p>
+
+      <div class="controls">
+        <label for="urlSelect"><strong>Indirizzo:</strong></label>
+        <select id="urlSelect">
+          <option value="https">https://www.scuola-digitale.it (Sito sicuro)</option>
+          <option value="http">http://vecchio-blog.it (Non cifrato)</option>
+          <option value="nxdomain">https://www.sito-inesistente.xyz (Dominio errato)</option>
+        </select>
+        <button class="btn" id="nextStepBtn" style="margin-top:0;">Passo successivo →</button>
+        <button class="btn btn-secondary" id="resetSimBtn" style="margin-top:0;">Reset</button>
+      </div>
+
+      <div class="network-diagram">
+        <div class="node" id="nodeClient">
+          <span class="node-icon">💻</span>
+          <strong>Client (Browser)</strong>
+          <div style="font-size:0.85rem; color:var(--muted);">Il tuo dispositivo</div>
+        </div>
+        <div class="node" id="nodeDns">
+          <span class="node-icon">📖</span>
+          <strong>Resolver DNS</strong>
+          <div style="font-size:0.85rem; color:var(--muted);">Rubrica IP</div>
+        </div>
+        <div class="node" id="nodeServer">
+          <span class="node-icon">🖥️</span>
+          <strong>Web Server</strong>
+          <div style="font-size:0.85rem; color:var(--muted);">Ospita il sito</div>
+        </div>
+      </div>
+
+      <div class="step-log" id="stepLog">
+        <span class="step-badge">Pronto</span>
+        <p>Seleziona un URL dal menu qui sopra e clicca su <strong>"Passo successivo"</strong> per iniziare la simulazione.</p>
+      </div>
+    </article>
+
+    <!-- SIMULATORE 2 -->
+    <article class="card sim-box">
+      <h2>Simulatore 2: Costruttore di richieste HTTP</h2>
+      <p>Scegli un <strong>Metodo HTTP</strong> e una <strong>Risorsa</strong> sul server, poi invia la richiesta per osservare il messaggio HTTP e il codice di stato restituito.</p>
+
+      <div class="http-grid">
+        <div class="panel">
+          <h3>Client (La tua richiesta)</h3>
+          <div style="margin: 0.75rem 0;">
+            <label for="methodSelect"><strong>Metodo:</strong></label><br>
+            <select id="methodSelect" style="width:100%; margin-top:0.3rem;">
+              <option value="GET">GET (Leggi risorsa)</option>
+              <option value="POST">POST (Invia dati)</option>
+              <option value="DELETE">DELETE (Elimina risorsa)</option>
+            </select>
+          </div>
+          <div style="margin: 0.75rem 0;">
+            <label for="pathSelect"><strong>Percorso (Risorsa):</strong></label><br>
+            <select id="pathSelect" style="width:100%; margin-top:0.3rem;">
+              <option value="/index.html">/index.html (Pagina principale)</option>
+              <option value="/contatti">/contatti (Modulo invio messaggio)</option>
+              <option value="/area-riservata">/area-riservata (Cartella protetta)</option>
+              <option value="/pagina-fantasma">/pagina-fantasma (Non esiste)</option>
+              <option value="/crash-server">/crash-server (Simula guasto interno)</option>
+            </select>
+          </div>
+          <button class="btn" id="sendHttpBtn">Invia Richiesta HTTP →</button>
+
+          <div class="raw-box" id="rawRequest">GET /index.html HTTP/1.1
+Host: www.esempio.it
+User-Agent: BrowserStudente/1.0</div>
+        </div>
+
+        <div class="panel">
+          <h3>Server (La risposta)</h3>
+          <div id="responseArea" style="margin-top:0.75rem;">
+            <span class="status-pill status-ok">200 OK</span>
+            <p><strong>Spiegazione:</strong> Il server ha trovato <code>/index.html</code> e ha inviato il codice della pagina al browser.</p>
+            <div class="raw-box" id="rawResponse">HTTP/1.1 200 OK
+Content-Type: text/html; charset=UTF-8
+
+<html><body>Benvenuto nella Home!</body></html></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+      <a href="teoria.html" class="btn btn-secondary">← Torna alla Teoria</a>
+      <a href="studio.html" class="btn">Prossimo step: Area Studio →</a>
+    </div>
+  </main>
+
+  <footer>
+    <p>Progetto didattico realizzato da <strong>DHANOA MACRINO MAFFEO</strong> – Pubblicato su GitHub Pages.</p>
+
+  </footer>
+
+  <script>
+    // Menu mobile
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
+
+    // --- LOGICA SIMULATORE 1 ---
+    const scenarios = {
+      https: [
+        {
+          node: 'nodeClient',
+          badge: 'Step 1 / 5 – Richiesta DNS',
+          text: 'Il Browser non sa dove si trova "www.scuola-digitale.it". Invia una query al Resolver DNS per chiedere l’indirizzo IP corrispondente.'
+        },
+        {
+          node: 'nodeDns',
+          badge: 'Step 2 / 5 – Risposta DNS',
+          text: 'Il Resolver DNS consulta la gerarchia dei nomi e risponde al Browser: "L’indirizzo IP del server è 93.184.216.34".'
+        },
+        {
+          node: 'nodeServer',
+          badge: 'Step 3 / 5 – Handshake TLS (Sicurezza)',
+          text: 'Poiché l’URL inizia con HTTPS, Browser e Server si scambiano i certificati digitali e concordano una chiave crittografica. Compare il lucchetto!'
+        },
+        {
+          node: 'nodeClient',
+          badge: 'Step 4 / 5 – Richiesta HTTP cifrata',
+          text: 'Il Browser invia il messaggio "GET / HTTP/1.1" all’interno del tunnel cifrato TLS verso l’IP 93.184.216.34.'
+        },
+        {
+          node: 'nodeServer',
+          badge: 'Step 5 / 5 – Risposta 200 OK',
+          text: 'Il Web Server decifra la richiesta, risponde con "200 OK" e invia i file HTML e CSS. Il Browser disegna la pagina sullo schermo.'
+        }
+      ],
+      http: [
+        {
+          node: 'nodeClient',
+          badge: 'Step 1 / 4 – Richiesta DNS',
+          text: 'Il Browser chiede al Resolver DNS qual è l’indirizzo IP di "vecchio-blog.it".'
+        },
+        {
+          node: 'nodeDns',
+          badge: 'Step 2 / 4 – Risposta DNS',
+          text: 'Il Resolver DNS risponde con l’indirizzo IP: 198.51.100.42.'
+        },
+        {
+          node: 'nodeClient',
+          badge: 'Step 3 / 4 – Richiesta HTTP IN CHIARO',
+          text: 'ATTENZIONE: Nessun passaggio TLS! Il Browser invia "GET / HTTP/1.1" in chiaro. Il browser mostra l’avviso "Non sicuro" perché i dati non sono cifrati.'
+        },
+        {
+          node: 'nodeServer',
+          badge: 'Step 4 / 4 – Risposta 200 OK',
+          text: 'Il Server invia la pagina web in chiaro. La pagina si carica, ma eventuali password inserite potrebbero essere intercettate sulla rete.'
+        }
+      ],
+      nxdomain: [
+        {
+          node: 'nodeClient',
+          badge: 'Step 1 / 2 – Richiesta DNS',
+          text: 'Il Browser chiede al Resolver DNS l’indirizzo IP di "www.sito-inesistente.xyz".'
+        },
+        {
+          node: 'nodeDns',
+          badge: 'Step 2 / 2 – Errore NXDOMAIN',
+          error: true,
+          text: 'ERRORE DNS (NXDOMAIN): Il dominio non esiste nella rubrica mondiale di Internet. La connessione si ferma qui: il Web Server non viene nemmeno contattato!'
+        }
+      ]
+    };
+
+    let currentStep = 0;
+    const urlSelect = document.getElementById('urlSelect');
+    const nextStepBtn = document.getElementById('nextStepBtn');
+    const resetSimBtn = document.getElementById('resetSimBtn');
+    const stepLog = document.getElementById('stepLog');
+
+    function clearNodes() {
+      ['nodeClient', 'nodeDns', 'nodeServer'].forEach(id => {
+        document.getElementById(id).classList.remove('active', 'error');
+      });
+    }
+
+    function resetSim1() {
+      currentStep = 0;
+      clearNodes();
+      nextStepBtn.disabled = false;
+      stepLog.innerHTML = '<span class="step-badge">Pronto</span><p>Seleziona un URL dal menu qui sopra e clicca su <strong>"Passo successivo"</strong> per iniziare la simulazione.</p>';
+    }
+
+    nextStepBtn.addEventListener('click', () => {
+      const steps = scenarios[urlSelect.value];
+      if (currentStep < steps.length) {
+        const s = steps[currentStep];
+        clearNodes();
+        const activeEl = document.getElementById(s.node);
+        activeEl.classList.add(s.error ? 'error' : 'active');
+        stepLog.innerHTML = `<span class="step-badge">${s.badge}</span><p>${s.text}</p>`;
+        currentStep++;
+        if (currentStep === steps.length) {
+          nextStepBtn.disabled = true;
+        }
+      }
+    });
+
+    resetSimBtn.addEventListener('click', resetSim1);
+    urlSelect.addEventListener('change', resetSim1);
+
+    // --- LOGICA SIMULATORE 2 ---
+    const methodSelect = document.getElementById('methodSelect');
+    const pathSelect = document.getElementById('pathSelect');
+    const rawRequest = document.getElementById('rawRequest');
+    const responseArea = document.getElementById('responseArea');
+
+    function updateRequestPreview() {
+      const m = methodSelect.value;
+      const p = pathSelect.value;
+      let body = m === 'POST' ? '\nContent-Type: application/x-www-form-urlencoded\n\nnome=Mario&messaggio=Ciao' : '';
+      rawRequest.textContent = `${m} ${p} HTTP/1.1\nHost: www.esempio.it\nUser-Agent: BrowserStudente/1.0${body}`;
+    }
+
+    methodSelect.addEventListener('change', updateRequestPreview);
+    pathSelect.addEventListener('change', updateRequestPreview);
+
+    document.getElementById('sendHttpBtn').addEventListener('click', () => {
+      updateRequestPreview();
+      const m = methodSelect.value;
+      const p = pathSelect.value;
+
+      let code = '200 OK';
+      let pillClass = 'status-ok';
+      let explanation = '';
+      let rawBody = '';
+
+      if (p === '/crash-server') {
+        code = '500 Internal Server Error';
+        pillClass = 'status-err';
+        explanation = 'Il server ha riscontrato un errore interno imprevisto nel codice e non può completare la richiesta.';
+        rawBody = 'HTTP/1.1 500 Internal Server Error\nContent-Type: text/plain\n\nErrore interno del server.';
+      } else if (p === '/pagina-fantasma') {
+        code = '404 Not Found';
+        pillClass = 'status-warn';
+        explanation = 'La risorsa richiesta non esiste sul server. Controlla di aver digitato correttamente l’URL.';
+        rawBody = 'HTTP/1.1 404 Not Found\nContent-Type: text/html\n\n<h1>404 - Pagina non trovata</h1>';
+      } else if (p === '/area-riservata') {
+        code = '403 Forbidden';
+        pillClass = 'status-err';
+        explanation = 'Il server ha capito la richiesta, ma ti nega l’accesso perché non hai i permessi di amministratore.';
+        rawBody = 'HTTP/1.1 403 Forbidden\nContent-Type: text/plain\n\nAccesso negato a questa cartella.';
+      } else if (m === 'DELETE') {
+        code = '405 Method Not Allowed';
+        pillClass = 'status-warn';
+        explanation = 'Il server non permette a un utente normale di cancellare file con il metodo DELETE!';
+        rawBody = 'HTTP/1.1 405 Method Not Allowed\nAllow: GET, POST';
+      } else if (p === '/contatti' && m === 'POST') {
+        code = '201 Created';
+        pillClass = 'status-ok';
+        explanation = 'I dati del modulo sono stati inviati con successo tramite POST e il server ha salvato il nuovo messaggio.';
+        rawBody = 'HTTP/1.1 201 Created\nContent-Type: application/json\n\n{"stato": "Messaggio ricevuto"}';
+      } else {
+        code = '200 OK';
+        pillClass = 'status-ok';
+        explanation = `Richiesta ${m} su ${p} completata con successo! Il server restituisce il contenuto della pagina.`;
+        rawBody = `HTTP/1.1 200 OK\nContent-Type: text/html; charset=UTF-8\n\n<html><body>Contenuto di ${p}</body></html>`;
+      }
+
+      responseArea.innerHTML = `
+        <span class="status-pill ${pillClass}">${code}</span>
+        <p><strong>Spiegazione:</strong> ${explanation}</p>
+        <div class="raw-box">${rawBody}</div>
+      `;
+    });
+  </script>
+</body>
+</html>

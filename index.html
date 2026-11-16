@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Come funziona il Web – Protocolli TCP/IP</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="logo">NetExplained</a>
+      <button class="menu-btn" id="menuBtn" aria-label="Apri menu">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="teoria.html">1. Teoria</a></li>
+        <li><a href="laboratorio.html">2. Laboratorio</a></li>
+        <li><a href="studio.html">3. Studio</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Cosa succede davvero quando premi Invio?</h1>
+      <p>Scopri il viaggio invisibile dei dati dal tuo browser ai server di tutto il mondo, esplorando i protocolli del livello applicativo dello stack TCP/IP.</p>
+      <a href="teoria.html" class="btn">Inizia dalla Teoria →</a>
+    </section>
+
+    <div class="grid">
+      <article class="card">
+        <h2>1. Teoria</h2>
+        <p>Modello Client-Server, stack TCP/IP, risoluzione dei nomi DNS, richieste HTTP/HTTPS e posta elettronica (SMTP e IMAP).</p>
+        <a href="teoria.html" class="btn">Leggi la teoria</a>
+      </article>
+      <article class="card">
+        <h2>2. Laboratorio Interattivo</h2>
+        <p>Segui passo dopo passo il percorso di un pacchetto sul web e costruisci le tue richieste HTTP per osservare le risposte del server.</p>
+        <a href="laboratorio.html" class="btn">Prova i simulatori</a>
+      </article>
+      <article class="card">
+        <h2>3. Area Studio</h2>
+        <p>Metti alla prova ciò che hai imparato con flashcard interattive, un quiz di autovalutazione con feedback e un glossario rapido.</p>
+        <a href="studio.html" class="btn">Mettiti alla prova</a>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <p>Progetto didattico realizzato da <strong>DHANOA MACRINO MAFFEO</strong> – Pubblicato su GitHub Pages.</p>
+  </footer>
+
+  <script>
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
